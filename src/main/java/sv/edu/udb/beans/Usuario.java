@@ -1,4 +1,4 @@
-package sv.edu.udb.model;
+package sv.edu.udb.beans;
 public class Usuario {
 
  private int id;
@@ -8,7 +8,6 @@ public class Usuario {
  private String correo;
  private int dui;
  private String password;
- private boolean verificacion;
  private int categoria;
  
  public int getId() {
@@ -58,13 +57,6 @@ public class Usuario {
  }
  public void setPassword(String password) {
  this.password = password;
- }
- 
- public boolean getVerificacion() {
- return verificacion;
- }
- public void setVerificacion(boolean verificacion) {
- this.verificacion = verificacion;
  }
  
  public int getCategoria() {

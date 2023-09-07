@@ -1,105 +1,268 @@
 package sv.edu.udb.model;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-public class UsuariosDAO extends AppConnection{
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
- public void insert(Usuario usuario) throws SQLException{
- connect();
- pstmt = conn.prepareStatement("insert into usuario (Nombre_Usuario,Apellido_Usuario,Telefono_Usuario,Correo_Usuario,DUI_Usuario,Contrasena_Usuario,Verifcacion_Usuario,Categoria_Usuario) values(?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
- pstmt.setString(1, usuario.getNombre());
- pstmt.setString(2, usuario.getApellido());
- pstmt.setInt(3, usuario.getTelefono());
- pstmt.setString(4, usuario.getCorreo());
- pstmt.setInt(5, usuario.getDui());
- pstmt.setString(6, usuario.getPassword());
- pstmt.setBoolean(7, usuario.getVerificacion());
- pstmt.setInt(8, usuario.getCategoria());
- pstmt.executeUpdate();
+import sv.edu.udb.beans.ResultadoLogin;
+import sv.edu.udb.beans.Usuario;
 
- //obteniendo el ultimo id generado
- ResultSet keys= pstmt.getGeneratedKeys();
- keys.next();
- int id = keys.getInt(1);
+public class UsuariosDAO extends AppConnection {
 
- usuario.setId(id);
- close();
- }
+	public void insert(Usuario usuario) throws SQLException {
+		connect();
+		pstmt = conn.prepareStatement(
+				"insert into usuario (Nombre_Usuario,Apellido_Usuario,Telefono_Usuario,Correo_Usuario,DUI_Usuario,Contrasena_Usuario,Categoria_Usuario) values(?,?,?,?,?,?,?,?)",
+				Statement.RETURN_GENERATED_KEYS);
+		pstmt.setString(1, usuario.getNombre());
+		pstmt.setString(2, usuario.getApellido());
+		pstmt.setInt(3, usuario.getTelefono());
+		pstmt.setString(4, usuario.getCorreo());
+		pstmt.setInt(5, usuario.getDui());
+		pstmt.setString(6, usuario.getPassword());
+		pstmt.setInt(7, usuario.getCategoria());
+		pstmt.executeUpdate();
 
- public void update(Usuario usuario) throws SQLException{
-	 connect();
-	 pstmt = conn.prepareStatement("update usuario set Nombre_Usuario = ?, Apellido_Usuario = ?, Telefono_Usuario = ?, Correo_Usuario = ?, DUI_Usuario = ?, Contrasena_Usuario = ?, Verifcacion_Usuario = ?, Categoria_Usuario = ? where Id_Usuario = ?");
-	 pstmt.setString(1, usuario.getNombre());
-	 pstmt.setString(2, usuario.getApellido());
-	 pstmt.setInt(3, usuario.getTelefono());
-	 pstmt.setString(4, usuario.getCorreo());
-	 pstmt.setInt(5, usuario.getDui());
-	 pstmt.setString(6, usuario.getPassword());
-	 pstmt.setBoolean(7, usuario.getVerificacion());
-	 pstmt.setInt(8, usuario.getCategoria());
-	 pstmt.setInt(9, usuario.getId());
-	 pstmt.executeUpdate();
-	 close();
-	 }
+		// obteniendo el ultimo id generado
+		ResultSet keys = pstmt.getGeneratedKeys();
+		keys.next();
+		int id = keys.getInt(1);
 
-	 public void delete(int id) throws SQLException{
-	 connect();
-	 pstmt = conn.prepareStatement("delete from usuario where Id_Usuario = ?");
-	 pstmt.setInt(1, id);
-	 pstmt.execute();
-	 close();
-	 }
+		usuario.setId(id);
+		close();
+	}
+	
+	public boolean sendEmail(String recipient) throws SQLException  {
+	    // Genera una contraseña aleatoria de 8 caracteres
+	    String newPassword = generarPass(8);
 
-	 public ArrayList<Usuario> findAll() throws SQLException{
-	 connect();
-	 stmt = conn.createStatement();
-	 resultSet = stmt.executeQuery("select Id_Usuario,Nombre_Usuario,Apellido_Usuario,Telefono_Usuario,Correo_Usuario,DUI_Usuario,Contrasena_Usuario,Verifcacion_Usuario,Categoria_Usuario from usuario");
-	 ArrayList<Usuario> usuarios = new ArrayList();
+	    // Aquí puedes agregar lógica para actualizar la contraseña del usuario en tu base de datos
+	    // Por ejemplo, si estás utilizando una clase UsuarioDAO, podrías llamar a un método como:
+	    // usuarioDAO.updatePassword(recipient, newPassword);
+	    boolean exito = newPass(newPassword, recipient);
+	    
+	    if(exito)
+	    {
+	    	// Configura las propiedades del servidor SMTP simulado (FakeSMTP)
+		    Properties properties = new Properties();
+		    properties.setProperty("mail.smtp.host", "localhost"); // Dirección del servidor FakeSMTP
+		    properties.setProperty("mail.smtp.port", "25"); // Puerto predeterminado de FakeSMTP
 
-	 while(resultSet.next()){
-	 Usuario tmp = new Usuario();
-	 tmp.setId(resultSet.getInt(1));
-	 tmp.setNombre(resultSet.getString(2));
-	 tmp.setApellido(resultSet.getString(3));
-	 tmp.setTelefono(resultSet.getInt(4));
-	 tmp.setCorreo(resultSet.getString(5));
-	 tmp.setDui(resultSet.getInt(6));
-	 tmp.setPassword(resultSet.getString(7));
-	 tmp.setVerificacion(resultSet.getBoolean(8));
-	 tmp.setCategoria(resultSet.getInt(9));
-	 usuarios.add(tmp);
-	 }
+		    // Crea una sesión de correo
+		    Session session = Session.getDefaultInstance(properties);
 
-	 close();
+		    try {
+		        // Crea un mensaje de correo
+		        MimeMessage message = new MimeMessage(session);
+		        message.setFrom(new InternetAddress("ejemplodependiente@gmail.com")); // Remitente (cambia por tu dirección de correo)
+		        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient));
+		        message.setSubject("Contraseña temporal generada");
+		        message.setText("Tu nueva contraseña es: " + newPassword);
 
-	 return usuarios;
-	 }
+		        // Envía el mensaje
+		        Transport.send(message);
 
-	 public Usuario findById(int id) throws SQLException{
+		        System.out.println("Correo enviado exitosamente a: " + recipient);
 
-		 Usuario usuario = null;
+		        // Si todo fue exitoso, retornamos true
+		        return true;
+		    } catch (MessagingException e) {
+		        e.printStackTrace();
+		        System.err.println("Error al enviar el correo: " + e.getMessage());
 
-		 connect();
-		 pstmt = conn.prepareStatement("select Id_Usuario,Nombre_Usuario,Apellido_Usuario,Telefono_Usuario,Correo_Usuario,DUI_Usuario,Contrasena_Usuario,Verifcacion_Usuario,Categoria_Usuario from usuario where Id_Usuario = ?");
-		 pstmt.setInt(1, id);
+		        // Si ocurrió un error, retornamos false
+		        return false;
+		    }
+	    }else {
+	    	return false;
+	    }
+	}
 
-		 resultSet = pstmt.executeQuery();
+	public static String generarPass(int length) {
+	    String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	    StringBuilder password = new StringBuilder();
 
-		 while(resultSet.next()){
-		 usuario = new Usuario();
-		 usuario.setId(resultSet.getInt(1));
-		 usuario.setNombre(resultSet.getString(2));
-		 usuario.setApellido(resultSet.getString(3));
-		 usuario.setTelefono(resultSet.getInt(4));
-		 usuario.setCorreo(resultSet.getString(5));
-		 usuario.setDui(resultSet.getInt(6));
-		 usuario.setPassword(resultSet.getString(7));
-		 usuario.setVerificacion(resultSet.getBoolean(8));
-		 usuario.setCategoria(resultSet.getInt(9));
-		 }
+	    for (int i = 0; i < length; i++) {
+	        int index = (int) (Math.random() * characters.length());
+	        password.append(characters.charAt(index));
+	    }
 
-		 close();
-		 return usuario;
-		 }
+	    return password.toString();
+	}
+	
+	public boolean newPass(String password, String correo) throws SQLException {
+	    boolean success = false;
+
+	    connect();
+
+	    // Primero, verifica si existe el usuario con ese correo
+	    pstmt = conn.prepareStatement(
+	            "SELECT * FROM usuario WHERE Correo_Usuario = ?");
+	    pstmt.setString(1, correo);
+	    ResultSet rs = pstmt.executeQuery();
+
+	    if (rs.next()) {
+	        // La consulta devolvió resultados, lo que significa que el usuario existe
+	        // Ahora, procedemos a cambiar la contraseña
+	        pstmt = conn.prepareStatement(
+	                "UPDATE usuario SET Contrasena_Usuario = ? WHERE Correo_Usuario = ?");
+	        pstmt.setString(1, password);
+	        pstmt.setString(2, correo);
+
+	        int rowsAffected = pstmt.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            success = true; // Se actualizó al menos una fila, por lo tanto, consideramos la operación exitosa.
+	        }
+	    }
+	    return success;
+	}
+	
+	public boolean updatePass(String anterior, String password, String correo) throws SQLException {
+	    boolean success = false;
+
+	    connect();
+
+	    // Primero, verifica si la contraseña anterior coincide con la contraseña actual del usuario
+	    pstmt = conn.prepareStatement(
+	            "SELECT * FROM usuario WHERE Correo_Usuario = ? AND Contrasena_Usuario = ?");
+	    pstmt.setString(1, correo);
+	    pstmt.setString(2, anterior);
+	    ResultSet rs = pstmt.executeQuery();
+
+	    if (rs.next()) {
+	        // La consulta devolvió resultados, lo que significa que la contraseña anterior es correcta
+	        // Ahora, procedemos a cambiar la contraseña
+	        pstmt = conn.prepareStatement(
+	                "UPDATE usuario SET Contrasena_Usuario = ? WHERE Correo_Usuario = ?");
+	        pstmt.setString(1, password);
+	        pstmt.setString(2, correo);
+
+	        int rowsAffected = pstmt.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            success = true; // Se actualizó al menos una fila, por lo tanto, consideramos la operación exitosa.
+	        }
+	    }
+
+	    close();
+
+	    return success;
+	}
+
+	public void update(Usuario usuario) throws SQLException {
+		connect();
+		pstmt = conn.prepareStatement(
+				"update usuario set Nombre_Usuario = ?, Apellido_Usuario = ?, Telefono_Usuario = ?, Correo_Usuario = ?, DUI_Usuario = ?, Contrasena_Usuario = ?, Categoria_Usuario = ? where Id_Usuario = ?");
+		pstmt.setString(1, usuario.getNombre());
+		pstmt.setString(2, usuario.getApellido());
+		pstmt.setInt(3, usuario.getTelefono());
+		pstmt.setString(4, usuario.getCorreo());
+		pstmt.setInt(5, usuario.getDui());
+		pstmt.setString(6, usuario.getPassword());
+		pstmt.setInt(7, usuario.getCategoria());
+		pstmt.setInt(8, usuario.getId());
+		pstmt.executeUpdate();
+		close();
+	}
+
+	public ResultadoLogin login(String correo, String contrasena) throws SQLException {
+		connect();
+		ResultSet rs = null;
+		boolean autenticado = false;
+		String nombreApellido = null;
+
+		try {
+			pstmt = conn.prepareStatement(
+					"SELECT Nombre_Usuario, Apellido_Usuario FROM usuario WHERE Correo_Usuario = ? AND Contrasena_Usuario = ? AND Categoria_Usuario = 4");
+			pstmt.setString(1, correo);
+			pstmt.setString(2, contrasena);
+			rs = pstmt.executeQuery();
+
+			if (rs.next()) {
+				// Las credenciales son correctas
+				autenticado = true;
+				nombreApellido = rs.getString("Nombre_Usuario") + " " + rs.getString("Apellido_Usuario");
+			}
+		} finally {
+			// Cierra recursos
+			if (rs != null) {
+				rs.close();
+			}
+			if (pstmt != null) {
+				pstmt.close();
+			}
+			if (conn != null) {
+				conn.close();
+			}
 		}
+
+		return new ResultadoLogin(autenticado, nombreApellido);
+	}
+
+	public void delete(int id) throws SQLException {
+		connect();
+		pstmt = conn.prepareStatement("delete from usuario where Id_Usuario = ?");
+		pstmt.setInt(1, id);
+		pstmt.execute();
+		close();
+	}
+
+	public ArrayList<Usuario> findAll() throws SQLException {
+		connect();
+		stmt = conn.createStatement();
+		resultSet = stmt.executeQuery(
+				"select Id_Usuario,Nombre_Usuario,Apellido_Usuario,Telefono_Usuario,Correo_Usuario,DUI_Usuario,Contrasena_Usuario,Categoria_Usuario from usuario");
+		ArrayList<Usuario> usuarios = new ArrayList();
+
+		while (resultSet.next()) {
+			Usuario tmp = new Usuario();
+			tmp.setId(resultSet.getInt(1));
+			tmp.setNombre(resultSet.getString(2));
+			tmp.setApellido(resultSet.getString(3));
+			tmp.setTelefono(resultSet.getInt(4));
+			tmp.setCorreo(resultSet.getString(5));
+			tmp.setDui(resultSet.getInt(6));
+			tmp.setPassword(resultSet.getString(7));
+			tmp.setCategoria(resultSet.getInt(8));
+			usuarios.add(tmp);
+		}
+
+		close();
+
+		return usuarios;
+	}
+
+	public Usuario findById(int id) throws SQLException {
+		Usuario usuario = null;
+		connect();
+		pstmt = conn.prepareStatement(
+				"select Id_Usuario,Nombre_Usuario,Apellido_Usuario,Telefono_Usuario,Correo_Usuario,DUI_Usuario,Contrasena_Usuario,Categoria_Usuario from usuario where Id_Usuario = ?");
+		pstmt.setInt(1, id);
+
+		resultSet = pstmt.executeQuery();
+
+		while (resultSet.next()) {
+			usuario = new Usuario();
+			usuario.setId(resultSet.getInt(1));
+			usuario.setNombre(resultSet.getString(2));
+			usuario.setApellido(resultSet.getString(3));
+			usuario.setTelefono(resultSet.getInt(4));
+			usuario.setCorreo(resultSet.getString(5));
+			usuario.setDui(resultSet.getInt(6));
+			usuario.setPassword(resultSet.getString(7));
+			usuario.setCategoria(resultSet.getInt(8));
+		}
+
+		close();
+		return usuario;
+	}
+}

@@ -15,7 +15,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import sv.edu.udb.model.Oferta;
+import sv.edu.udb.beans.Oferta;
 import sv.edu.udb.model.OfertasDAO;
 
 @Path("ofertas")

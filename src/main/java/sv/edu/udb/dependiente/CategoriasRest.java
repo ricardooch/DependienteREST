@@ -7,7 +7,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import sv.edu.udb.model.Categoria;
+
+import sv.edu.udb.beans.Categoria;
 import sv.edu.udb.model.CategoriasDAO;
 @Path("categorias")
 public class CategoriasRest {

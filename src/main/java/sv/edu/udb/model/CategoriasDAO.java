@@ -1,6 +1,8 @@
 package sv.edu.udb.model;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import sv.edu.udb.beans.Categoria;
 public class CategoriasDAO extends AppConnection{
 
  public void insert(Categoria categoria) throws SQLException{

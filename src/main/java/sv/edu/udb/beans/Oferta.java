@@ -1,4 +1,4 @@
-package sv.edu.udb.model;
+package sv.edu.udb.beans;
 
 import java.sql.Date;
 

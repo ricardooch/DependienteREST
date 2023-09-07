@@ -1,6 +1,8 @@
 package sv.edu.udb.model;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import sv.edu.udb.beans.Oferta;
 public class OfertasDAO extends AppConnection{
 
 public void update(Oferta oferta) throws SQLException{
