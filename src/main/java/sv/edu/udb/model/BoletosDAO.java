@@ -7,19 +7,7 @@ import sv.edu.udb.beans.BoletoCompuesto;
 
 public class BoletosDAO extends AppConnection {
 
-	public void insert(Boleto boleto) throws SQLException {
-		connect();
-		pstmt = conn.prepareStatement(
-				"insert into boletos oferta_boleto, codigo_boleto, estado_boleto, cliente_boleto, empresa_boleto values(?,?,?,?,?)");
-		pstmt.setInt(1, boleto.getOferta());
-		pstmt.setString(2, boleto.getCodigo());
-		pstmt.setString(3, boleto.getEstado());
-		pstmt.setInt(4, boleto.getCliente());
-		pstmt.setString(5, boleto.getEmpresa());
-		pstmt.execute();
-		close();
-	}
-
+	// Modificar estado de cupón
 	public void updateEstado(Boleto boleto) throws SQLException {
 		connect();
 		pstmt = conn.prepareStatement("update boletos set estado_boleto = ? where id_boleto = ?");
@@ -29,54 +17,8 @@ public class BoletosDAO extends AppConnection {
 		close();
 	}
 
-	public void consultar(Boleto boleto) throws SQLException {
-		connect();
-		pstmt = conn.prepareStatement(
-				"select * from boletos set oferta_boleto = ?, codigo_boleto = ?, estado_boleto = ?, cliente_boleto = ?, empresa_boleto = ? where id_boleto = ?");
-		pstmt.setInt(1, boleto.getOferta());
-		pstmt.setString(2, boleto.getCodigo());
-		pstmt.setString(3, boleto.getEstado());
-		pstmt.setInt(4, boleto.getCliente());
-		pstmt.setString(5, boleto.getEmpresa());
-		pstmt.setInt(6, boleto.getId());
-		pstmt.execute();
-		close();
-	}
-
-	public void delete(int id) throws SQLException {
-		connect();
-		pstmt = conn.prepareStatement("delete from boletos where id_boleto = ?");
-		pstmt.setInt(1, id);
-		pstmt.execute();
-		close();
-	}
-
-	public ArrayList<Boleto> findAll() throws SQLException {
-		connect();
-		stmt = conn.createStatement();
-		resultSet = stmt.executeQuery(
-				"select id_boleto, oferta_boleto, codigo_boleto, estado_boleto, cliente_boleto, empresa_boleto from boletos");
-		ArrayList<Boleto> boletos = new ArrayList();
-
-		while (resultSet.next()) {
-			Boleto tmp = new Boleto();
-			tmp.setId(resultSet.getInt(1));
-			tmp.setOferta(resultSet.getInt(2));
-			tmp.setCodigo(resultSet.getString(3));
-			tmp.setEstado(resultSet.getString(4));
-			tmp.setCliente(resultSet.getInt(5));
-			tmp.setEmpresa(resultSet.getString(6));
-
-			boletos.add(tmp);
-		}
-
-		close();
-
-		return boletos;
-	}
-
+	// Consultar información de cupón por ID (No usado)
 	public Boleto findSimpleById(int id) throws SQLException {
-
 		Boleto boleto = null;
 
 		connect();
@@ -99,8 +41,9 @@ public class BoletosDAO extends AppConnection {
 		return boleto;
 	}
 
+	// Consultar toda la información de cupón junto a info de oferta y cliente
 	public BoletoCompuesto consultarBoleto(String codigo, String dui) throws SQLException {
-		BoletoCompuesto boleto = null;
+		BoletoCompuesto boleto = null; // BoletoCompuesto es un bean compuesto para manejar información de 3 tablas
 		connect();
 
 		pstmt = conn.prepareStatement(
